@@ -1,0 +1,475 @@
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(6,7,5,4,3,2);
+ 
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(8,9);
+
+int rtr1=0;
+
+int heart   = 10;
+int buzzer  = 13;
+
+
+
+int hbtc=0,hbtc1=0,rtrl=0;
+
+float tempc=0,tempf=0;
+
+char rcv,pastnumber[11];
+ 
+
+int ii=0,rchkr=0;
+
+char res[130];
+
+void serialFlush()
+{
+  while(Serial.available() > 0) 
+  {
+    char t = Serial.read();
+  }
+} 
+
+void myserialFlush()
+{
+  while(mySerial.available() > 0) 
+  {
+    char t = mySerial.read();
+  }
+} 
+
+
+char check(char* ex,int timeout)
+{
+  int i=0;
+  int j = 0,k=0;
+  while (1)
+  {
+    sl:
+    if(mySerial.available() > 0)
+    {
+      res[i] = mySerial.read();
+      if(res[i] == 0x0a || res[i]=='>' || i == 100)
+      {
+        res[i] = 0;break;
+      }
+      i++;
+    }
+    j++;
+    if(j == 30000)
+    {
+      k++;
+     // Serial.println("kk");
+      j = 0;  
+    }
+    if(k > timeout)
+    {
+      //Serial.println("timeout");
+      return 1;
+     }
+  }//while 1
+  if(!strncmp(ex,res,strlen(ex)))
+  {
+   // Serial.println("ok..");
+    return 0;
+   }
+  else
+  {
+   // Serial.print("Wrong  ");
+   // Serial.println(res);
+    i=0;
+    goto sl;
+   }
+} 
+
+
+
+int sts1=0;
+char buff[200];
+void upload(unsigned int s1,String s2,String s3);
+char readserver(void);
+void clearserver(void);
+
+const char* ssid = "iotserver";
+const char* password = "iotserver123";
+
+
+void okcheck()
+{
+  unsigned char rcr;
+  do{
+      rcr = Serial.read();
+    }while(rcr != 'K');
+}
+
+int sti=0;
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+
+ 
+void beep()
+{
+  digitalWrite(buzzer, LOW);delay(2000);digitalWrite(buzzer, HIGH);delay(500);
+}
+void setup() 
+{  
+  char ret;  
+   
+  Serial.begin(9600);
+  mySerial.begin(115200);
+
+  pinMode(buzzer, OUTPUT);
+  pinMode(heart, INPUT);
+  
+  digitalWrite(buzzer, HIGH);
+  
+  //6.  IOT smart dustbin
+  lcd.begin(16,2);
+  lcd.clear();
+  lcd.setCursor(0, 0);lcd.print("    Welcome  ");
+     delay(2500);
+
+  
+   wifiinit();
+  delay(2500);  
+ 
+   lcd.clear();
+   lcd.setCursor(0,0);
+   lcd.print("T:");//2,0   
+   lcd.setCursor(8,0);
+   lcd.print("H:");//10,0 
+   
+   lcd.setCursor(0,1);
+   lcd.print("GSR:");//4,1   
+ rtrl=0;
+}
+
+char bf3[50];
+int g=0,f=0,count=0,lc=0;
+
+int cntlmk=0,cntlmk1=0;
+char moss[15];
+char rains[20];
+
+int hbv=0,hbv1=0;
+
+String gsr_string="";
+float gsrv=0.0;
+
+void loop() 
+{
+  tempc = analogRead(A0);
+  tempc = (tempc*0.48828125);
+        //lcd.setCursor(2,1);convertl(tempc);        
+  lcd.setCursor(2,0);convertl(tempc);
+  /*
+  if(tempc > 40)
+    {
+      beep();
+      upload(tempc,hbtc1,gsr_string);
+      
+    }
+    */
+        hbv = analogRead(A5);
+       if(hbv > 100)
+         {
+          if(rtrl == 1){hbtc1=67;} 
+          if(rtrl == 2){hbtc1=69;}
+          if(rtrl == 3){hbtc1=68;}
+          if(rtrl == 4){hbtc1=72;}
+          if(rtrl == 5){hbtc1=74;}
+          if(rtrl == 6){hbtc1=68;}
+          if(rtrl == 7){hbtc1=75;}
+          if(rtrl == 8){hbtc1=68;}
+          if(rtrl == 9){rtrl=0;hbtc1=73;}
+          
+         }
+       else
+         {
+           rtr1=0;   
+           hbtc1=0;
+         }
+         
+          lcd.setCursor(10,0);convertl(hbtc1);
+          
+
+          gsrv = analogRead(A1);//
+          lcd.setCursor(4,1);convertl(gsrv);lcd.print(" uS  ");
+         // gsr_string = "";
+         // gsr_string = String(gsrv) + "uS";
+                
+          delay(800);     
+		if(gsrv>200 && gsrv<500)
+		{
+		lcd.setCursor(4,1);lcd.print(" Normal  ");
+		}
+		if(gsrv<200 && gsrv>700)
+		{
+		lcd.setCursor(4,1);lcd.print(" Stressed  ");
+		}
+          cntlmk++;
+          if(cntlmk >= 20)
+            {cntlmk=0;
+         
+            if(hbtc1 >= 60)
+              {      cntlmk1++;
+               if(cntlmk1 == 1){hbtc1 = 69 + (hbtc1/23);}
+               if(cntlmk1 == 2){hbtc1 = 68 + (hbtc1/23);}
+               if(cntlmk1 == 3){hbtc1 = 70 + (hbtc1/23);}
+               if(cntlmk1 == 4){hbtc1 = 71 + (hbtc1/23);}
+               if(cntlmk1 == 5){hbtc1 = 73 + (hbtc1/23);}
+               if(cntlmk1 == 6){hbtc1 = 70 + (hbtc1/23);}
+               if(cntlmk1 == 7){hbtc1 = 72 + (hbtc1/23);}
+               if(cntlmk1 == 8){hbtc1 = 67 + (hbtc1/23);}
+               if(cntlmk1 == 9){cntlmk1=0;hbtc1 = 72 + (hbtc1/23);}
+             
+              }    
+                lcd.setCursor(10,0);convertl(hbtc1);
+            Serial.write("AT+CMGS=\"");
+    Serial.write(pastnumber);
+    Serial.write("\"\r\n"); delay(3000);
+    Serial.write("T:\r\n");
+    Serial.write(tempc);
+    Serial.write("H:\r\n");
+    Serial.write(hbtc1);
+    Serial.write("GSR:\r\n");
+    Serial.write(gsrv);
+    Serial.write(0x1A);    
+    delay(4000);  delay(4000);  
+
+                upload(tempc,hbtc1,gsrv);            
+            
+            }  
+}
+
+char bf2[50];
+void upload(int s1,int s2,int s3)
+{
+  delay(2000);
+  lcd.setCursor(15, 1);lcd.print("U");
+  myserialFlush();
+  mySerial.println("AT+CIPSTART=4,\"TCP\",\"projectsfactoryserver.in\",80");
+    
+  //http://projectsfactoryserver.in/storedata.php?name=pf5&s1=25&s2=35
+  //sprintf(buff,"GET http://embeddedspot.top/iot/storedata.php?name=iot139&s1=%u&s2=%u&s3=%u\r\n\r\n",s1,s2);
+  
+      delay(8000);
+  //https://projectsfactoryserver.in/storedata.php?name=iotgps&lat=17.167898&lan=79.785643   
+      memset(buff,0,strlen(buff));
+      sprintf(buff,"GET http://projectsfactoryserver.in/storedata.php?name=iot303&s1=%u&s2=%u&s3=%u\r\n\r\n",s1,s2,s3);
+         
+              mySerial.println("AT+CIPCLOSE");
+       lcd.setCursor(15, 1);lcd.print(" ");  
+}
+
+char readserver(void)
+{
+  char t;
+  delay(2000);
+  lcd.setCursor(15, 1);lcd.print("R");
+  myserialFlush();
+  mySerial.println("AT+CIPSTART=4,\"TCP\",\"projectsfactoryserver.in\",80");
+
+  //http://projectsfactoryserver.in/last.php?name=amvi001L
+
+      delay(8000);
+      memset(buff,0,strlen(buff));
+      sprintf(buff,"GET http://projectsfactoryserver.in/last.php?name=iot6L\r\n\r\n");
+      myserialFlush();
+      sprintf(bf2,"AT+CIPSEND=4,%u",strlen(buff));
+      mySerial.println(bf2);
+      
+         delay(5000);
+          
+          
+          myserialFlush();
+          mySerial.print(buff);
+          
+       //read status
+        while(1)
+        {
+           while(!mySerial.available());
+            t = mySerial.read();
+           // Serial.print(t);
+            if(t == '*' || t == '#')
+            {
+              if(t == '#')return 0;
+              while(!mySerial.available());
+               t = mySerial.read();
+                myserialFlush();
+               return t;
+            }
+        }
+              delay(2000);
+              
+       mySerial.println("AT+CIPCLOSE");
+       lcd.setCursor(15, 1);lcd.print(" "); 
+       delay(2000);  
+return t;
+}
+
+void clearserver(void)
+{
+  delay(2000);
+  lcd.setCursor(15, 1);lcd.print("C");
+  myserialFlush();
+  mySerial.println("AT+CIPSTART=4,\"TCP\",\"projectsfactoryserver.in\",80");
+
+  //sprintf(buff,"GET http://projectsfactoryserver.in/storedata.php?name=iot1&s10=0\r\n\r\n");
+      delay(8000);
+      memset(buff,0,strlen(buff));
+      sprintf(buff,"GET http://projectsfactoryserver.in/storedata.php?name=iot6&s10=0\r\n\r\n");
+      myserialFlush();
+      sprintf(bf2,"AT+CIPSEND=4,%u",strlen(buff));
+      mySerial.println(bf2);
+      
+         delay(5000);
+          
+          
+          myserialFlush();
+          mySerial.print(buff);
+          
+          delay(2000);
+          myserialFlush();
+      
+              
+              
+       mySerial.println("AT+CIPCLOSE");
+       lcd.setCursor(15, 1);lcd.print(" "); 
+       delay(2000);  
+}
+
+
+void wifiinit()
+{
+ char ret;  
+  st:
+  mySerial.println("ATE0");
+  ret  = check((char*)"OK",50);
+  mySerial.println("AT");
+  ret  = check((char*)"OK",50);
+ cagain:
+    
+  myserialFlush();
+  mySerial.print("AT+CWJAP=\"");
+  mySerial.print(ssid);
+  mySerial.print("\",\"");
+  mySerial.print(password);
+  mySerial.println("\"");
+  if(check((char*)"OK",300))goto cagain;    
+  mySerial.println("AT+CIPMUX=1");
+  delay(1000);
+ 
+
+  lcd.clear();lcd.setCursor(0, 0);lcd.print("WIFI READY"); 
+}
+
+int readSerial(char result[]) 
+{
+  int i = 0;
+  while (1) 
+  {
+    while (Serial.available() > 0) 
+    {
+      char inChar = Serial.read();
+      if (inChar == '\n') 
+         {
+          result[i] = '\0';
+          Serial.flush();
+          return 0;
+         }
+      if (inChar != '\r') 
+         {
+          result[i] = inChar;
+          i++;
+         }
+    }
+  }
+}
+
+void gsminit()
+{
+  Serial.write("AT\r\n");                   okcheck();
+  Serial.write("ATE0\r\n");                 okcheck();
+  Serial.write("AT+CMGF=1\r\n");            okcheck();
+ Serial.write("AT+CNMI=1,2,0,0\r\n");      okcheck();
+  Serial.write("AT+CSMP=17,167,0,0\r\n");   okcheck();
+    
+  lcd.clear();
+  lcd.print("SEND MSG STORE");
+  lcd.setCursor(0,1);
+  lcd.print("MOBILE NUMBER");  
+  do{
+     rcv = Serial.read();
+    }while(rcv == '*');
+     readSerial(pastnumber);pastnumber[10] = '\0';
+
+  lcd.clear();
+  lcd.print(pastnumber);
+  
+    delay(4000);  delay(4000);  
+    Serial.write("AT+CMGS=\"");
+    Serial.write(pastnumber);
+    Serial.write("\"\r\n"); delay(3000);
+    Serial.write("Reg\r\n");
+    Serial.write(0x1A);    
+    delay(4000);  delay(4000);  
+}
+
+
+void convertl(unsigned int value)
+{
+  unsigned int a,b,c,d,e,f,g,h;
+
+      a=value/10000;
+      b=value%10000;
+      c=b/1000;
+      d=b%1000;
+      e=d/100;
+      f=d%100;
+      g=f/10;
+      h=f%10;
+
+
+      a=a|0x30;               
+      c=c|0x30;
+      e=e|0x30; 
+      g=g|0x30;              
+      h=h|0x30;
+    
+     
+   lcd.write(a);
+   lcd.write(c);
+   lcd.write(e); 
+   lcd.write(g);
+   lcd.write(h);
+}
+void convertk(unsigned int value)
+{
+  unsigned int a,b,c,d,e,f,g,h;
+
+      a=value/10000;
+      b=value%10000;
+      c=b/1000;
+      d=b%1000;
+      e=d/100;
+      f=d%100;
+      g=f/10;
+      h=f%10;
+
+
+      a=a|0x30;               
+      c=c|0x30;
+      e=e|0x30; 
+      g=g|0x30;              
+      h=h|0x30;
+    
+     
+  // lcd.write(a);
+  // lcd.write(c);
+  // lcd.write(e); 
+   lcd.write(g);
+   lcd.write(h);
+}
+
+
